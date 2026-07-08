@@ -14,8 +14,8 @@
         label { display: block; font-size: 12px; color: #8b949e; margin: 12px 0 4px; text-transform: uppercase; }
         select, textarea { width: 100%; padding: 12px; background: #0d1117; border: 1px solid #30363d; border-radius: 10px; color: #e6edf3; font-size: 15px; font-family: inherit; }
         textarea { min-height: 150px; resize: vertical; }
-        button { width: 100%; padding: 14px; background: linear-gradient(135deg, #238636, #2ea043); border: none; border-radius: 10px; color: white; font-weight: 600; font-size: 16px; cursor: pointer; margin-top: 12px; }
-        button:active { transform: scale(0.97); }
+        button { width: 100%; padding: 14px; background: linear-gradient(135deg, #238636, #2ea043); border: none; border-radius: 10px; color: white; font-weight: 600; font-size: 16px; cursor: pointer; margin-top: 12px; transition: all 0.2s; }
+        button:active { transform: scale(0.97); opacity: 0.8; }
         .output { background: #0d1117; border-radius: 10px; padding: 12px; font-family: monospace; font-size: 12px; color: #8b949e; margin-top: 12px; border: 1px solid #21262d; max-height: 300px; overflow-y: auto; white-space: pre-wrap; }
         .hidden { display: none; }
         .loading { display: none; text-align: center; padding: 20px; }
@@ -24,6 +24,10 @@
         .scene-card { background: #0d1117; padding: 10px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #21262d; }
         .scene-card strong { color: #58a6ff; }
         .scene-card .duration { color: #8b949e; font-size: 12px; }
+        .text-muted { color: #8b949e; font-size: 13px; }
+        .mt-8 { margin-top: 8px; }
+        .flex { display: flex; gap: 8px; flex-wrap: wrap; }
+        .tag { background: #21262d; border: 1px solid #30363d; border-radius: 20px; padding: 4px 12px; font-size: 12px; color: #c9d1d9; display: inline-block; }
     </style>
 </head>
 <body>
@@ -66,62 +70,98 @@ The beat is almost ready.</textarea>
     <div id="output" class="output hidden"></div>
 
     <script>
-        let API_BASE_URL = localStorage.getItem('VS_API') || '';
-        if (!API_BASE_URL && window.location.hostname === 'localhost') API_BASE_URL = 'http://localhost:8001';
-        console.log('API URL:', API_BASE_URL || '(not set)');
+        // ─── BACKEND URL (hard-coded for production) ───
+        const API_BASE_URL = 'https://barksdale-video-studio.onrender.com';
 
+        console.log('✅ API URL:', API_BASE_URL);
+
+        // ─── Load Options ───
         async function loadOptions() {
-            if (!API_BASE_URL) return alert('Set API: localStorage.setItem("VS_API", "https://your-backend.onrender.com")');
             try {
                 const res = await fetch(API_BASE_URL + '/api/options');
+                if (!res.ok) throw new Error('Network response was not ok');
                 const data = await res.json();
                 const dirSel = document.getElementById('director');
-                data.directors.forEach(d => { const opt = document.createElement('option'); opt.value = d; opt.textContent = d; dirSel.appendChild(opt); });
+                data.directors.forEach(d => {
+                    const opt = document.createElement('option');
+                    opt.value = d;
+                    opt.textContent = d;
+                    dirSel.appendChild(opt);
+                });
                 const genSel = document.getElementById('genre');
-                data.genres.forEach(g => { const opt = document.createElement('option'); opt.value = g; opt.textContent = g; genSel.appendChild(opt); });
+                data.genres.forEach(g => {
+                    const opt = document.createElement('option');
+                    opt.value = g;
+                    opt.textContent = g;
+                    genSel.appendChild(opt);
+                });
                 const moodSel = document.getElementById('mood');
-                data.moods.forEach(m => { const opt = document.createElement('option'); opt.value = m; opt.textContent = m; moodSel.appendChild(opt); });
-            } catch (err) { console.error(err); }
+                data.moods.forEach(m => {
+                    const opt = document.createElement('option');
+                    opt.value = m;
+                    opt.textContent = m;
+                    moodSel.appendChild(opt);
+                });
+            } catch (err) {
+                console.error('Failed to load options:', err);
+                alert('❌ Could not connect to backend. Please check your internet and try again.');
+            }
         }
         loadOptions();
 
+        // ─── Analyze Script ───
         document.getElementById('analyzeBtn').addEventListener('click', async () => {
-            document.getElementById('loading').style.display = 'block';
+            const loading = document.getElementById('loading');
+            loading.style.display = 'block';
+
+            const payload = {
+                script: document.getElementById('script').value,
+                director: document.getElementById('director').value,
+                genre: document.getElementById('genre').value,
+                mood: document.getElementById('mood').value
+            };
+
             try {
                 const res = await fetch(API_BASE_URL + '/api/script/analyze', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        script: document.getElementById('script').value,
-                        director: document.getElementById('director').value,
-                        genre: document.getElementById('genre').value,
-                        mood: document.getElementById('mood').value
-                    })
+                    body: JSON.stringify(payload)
                 });
+                if (!res.ok) throw new Error('Analysis failed');
                 const data = await res.json();
+
                 const sb = document.getElementById('storyboard');
                 sb.classList.remove('hidden');
                 document.getElementById('sceneCount').textContent = data.scene_count + ' scenes';
-                document.getElementById('storyboardContent').innerHTML = data.scenes.map((s, i) =>
-                    `<div class="scene-card">
+
+                const content = document.getElementById('storyboardContent');
+                content.innerHTML = data.scenes.map((s, i) => `
+                    <div class="scene-card">
                         <strong>Scene ${i+1}</strong>
                         <span class="duration">${s.duration}s</span>
                         <div style="font-size:13px;color:#c9d1d9;margin-top:4px;">${s.heading || 'No heading'}</div>
                         <div style="font-size:12px;color:#8b949e;margin-top:4px;">${(s.action || '').substring(0, 100)}...</div>
-                    </div>`
-                ).join('');
+                    </div>
+                `).join('');
+
                 window.storyboard = data.scenes;
                 document.getElementById('output').classList.add('hidden');
             } catch (err) {
                 const output = document.getElementById('output');
                 output.classList.remove('hidden');
                 output.textContent = '❌ Error: ' + err.message;
-            } finally { document.getElementById('loading').style.display = 'none'; }
+            } finally {
+                loading.style.display = 'none';
+            }
         });
 
+        // ─── Generate Video ───
         document.getElementById('generateVideoBtn').addEventListener('click', async () => {
             if (!window.storyboard) return;
-            document.getElementById('loading').style.display = 'block';
+
+            const loading = document.getElementById('loading');
+            loading.style.display = 'block';
+
             try {
                 const res = await fetch(API_BASE_URL + '/api/video/generate', {
                     method: 'POST',
@@ -131,17 +171,19 @@ The beat is almost ready.</textarea>
                         director: document.getElementById('director').value
                     })
                 });
+                if (!res.ok) throw new Error('Generation failed');
                 const data = await res.json();
                 const output = document.getElementById('output');
                 output.classList.remove('hidden');
                 output.textContent = '🎬 Movie generated!\n\n' + JSON.stringify(data, null, 2);
             } catch (err) {
-                document.getElementById('output').classList.remove('hidden');
-                document.getElementById('output').textContent = '❌ Error: ' + err.message;
-            } finally { document.getElementById('loading').style.display = 'none'; }
+                const output = document.getElementById('output');
+                output.classList.remove('hidden');
+                output.textContent = '❌ Error: ' + err.message;
+            } finally {
+                loading.style.display = 'none';
+            }
         });
-
-        console.log('Set API: localStorage.setItem("VS_API", "https://your-backend.onrender.com")');
     </script>
 </body>
 </html>
