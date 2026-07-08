@@ -20,7 +20,7 @@ yarn-debug.log*
 yarn-error.log*
 
 # Build
-dist/
+# dist/  # Allowed for GitHub Pages deployment
 build/
 *.egg-info/
 
