@@ -21,12 +21,13 @@ class Settings(BaseSettings):
     REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
     
     # JWT
-    SECRET_KEY: str = os.getenv("SECRET_KEY", "your-secret-key-change-in-production")
+    JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", "your-secret-key-change-in-production")
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 hours
     
     # External APIs
     TMDB_API_KEY: str = os.getenv("TMDB_API_KEY", "")
+    TMDB_READ_ACCESS_TOKEN: str = os.getenv("TMDB_READ_ACCESS_TOKEN", "")
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
     REPLICATE_API_TOKEN: str = os.getenv("REPLICATE_API_TOKEN", "")
     

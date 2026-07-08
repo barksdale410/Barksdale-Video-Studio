@@ -7,7 +7,7 @@ services:
     container_name: barksdale-postgres
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: password
       POSTGRES_DB: barksdale
     ports:
       - "5432:5432"
@@ -39,14 +39,12 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: barksdale-backend
+    env_file:
+      - .env
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/barksdale
+      DATABASE_URL: postgresql://postgres:password@postgres:5432/barksdale
       REDIS_URL: redis://redis:6379/0
-      SECRET_KEY: your-super-secret-key-change-in-production
       DEBUG: "true"
-      TMDB_API_KEY: ${TMDB_API_KEY:-}
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-      REPLICATE_API_TOKEN: ${REPLICATE_API_TOKEN:-}
     ports:
       - "8001:8001"
     depends_on:
@@ -57,8 +55,8 @@ services:
     volumes:
       - ./backend:/app
     command: >
-      sh -c "alembic upgrade head &&
-             python scripts/seed_directors.py --featured &&
+      sh -c "pip install -r requirements.txt &&
+             python -c 'from app.core.database import engine, Base; Base.metadata.create_all(bind=engine)' &&
              uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload"
 
   # Celery Worker
@@ -67,12 +65,12 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: barksdale-worker
+    env_file:
+      - .env
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/barksdale
+      DATABASE_URL: postgresql://postgres:password@postgres:5432/barksdale
       REDIS_URL: redis://redis:6379/0
-      SECRET_KEY: your-super-secret-key-change-in-production
       DEBUG: "true"
-      REPLICATE_API_TOKEN: ${REPLICATE_API_TOKEN:-}
     depends_on:
       postgres:
         condition: service_healthy

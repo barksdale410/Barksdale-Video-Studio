@@ -243,11 +243,12 @@ def get_or_create_director(db: Session, tmdb_id: int, data: Dict) -> Director:
     if director:
         # Update existing
         for key, value in data.items():
-            if hasattr(director, key) and key not in ['id', 'tmdb_id', 'created_at']:
+            if hasattr(director, key) and key not in ['id', 'created_at']:
                 setattr(director, key, value)
     else:
-        # Create new
-        director = Director(tmdb_id=tmdb_id, **data)
+        # Create new - remove tmdb_id from data if present
+        data_copy = {k: v for k, v in data.items() if k != 'tmdb_id'}
+        director = Director(tmdb_id=tmdb_id, **data_copy)
         db.add(director)
     
     db.commit()
@@ -498,19 +499,18 @@ def seed_additional_directors(db: Session) -> int:
     additional = generate_additional_directors(db)
     count = 0
     
-    for director_data in additional:
-        # Generate unique tmdb_id (negative to avoid conflicts)
-        tmdb_id = -1 * hash(director_data["name"]) % 1000000
-        
-        # Check if already exists
+    for i, director_data in enumerate(additional):
+        # Check if already exists by name
         existing = db.query(Director).filter(Director.name == director_data["name"]).first()
         if existing:
             continue
         
+        # Generate unique tmdb_id using a fixed offset to avoid conflicts
+        tmdb_id = 900000 + i  # Use high numbers to avoid TMDB ID conflicts
+        
         # Add full profile
-        director_data["tmdb_id"] = tmdb_id
-        director_data["popularity_score"] = 7.0 + (count / len(additional)) * 2.5
-        director_data["is_featured"] = count < 6
+        director_data["popularity_score"] = 7.0 + (i / len(additional)) * 2.5
+        director_data["is_featured"] = i < 6
         
         # Ensure all fields
         director_data.setdefault("color_palette", ["#333333", "#666666", "#999999", "#0A0A0A"])
@@ -522,7 +522,26 @@ def seed_additional_directors(db: Session) -> int:
         director_data.setdefault("moods", ["Cinematic", "Professional"])
         director_data.setdefault("bio", f"Notable {director_data['country']} director known for {director_data['film_count']} films")
         
-        director = Director(**director_data)
+        # Create director
+        director = Director(
+            tmdb_id=tmdb_id,
+            name=director_data["name"],
+            country=director_data.get("country"),
+            birth_year=director_data.get("birth_year"),
+            death_year=director_data.get("death_year"),
+            color_palette=director_data.get("color_palette"),
+            camera_style=director_data.get("camera_style"),
+            lighting_style=director_data.get("lighting_style"),
+            editing_style=director_data.get("editing_style"),
+            sound_style=director_data.get("sound_style"),
+            visual_signature=director_data.get("visual_signature"),
+            moods=director_data.get("moods"),
+            genres=director_data.get("genres"),
+            popularity_score=director_data["popularity_score"],
+            is_featured=director_data["is_featured"],
+            film_count=director_data.get("film_count"),
+            bio=director_data.get("bio")
+        )
         db.add(director)
         count += 1
     

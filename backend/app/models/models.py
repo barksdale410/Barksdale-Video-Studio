@@ -40,13 +40,6 @@ class Director(Base):
     # Relationships
     generations = relationship("Generation", back_populates="director")
     favorites = relationship("FavoriteDirector", back_populates="director")
-    
-    __table_args__ = (
-        Index('idx_directors_name_trgm', 'name', postgresql_using='gin',
-              postgresql_ops={'name': 'gin_trgm_ops'}),
-        Index('idx_directors_moods', 'moods', postgresql_using='gin'),
-        Index('idx_directors_genres', 'genres', postgresql_using='gin'),
-    )
 
 
 class User(Base):
