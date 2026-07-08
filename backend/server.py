@@ -47,6 +47,30 @@ async def analyze_script(request: Request):
         "scene_count": 1
     }
 
+@app.post("/api/video/generate")
+async def generate_video(request: Request):
+    try:
+        data = await request.json()
+        storyboard = data.get('storyboard', [])
+        director = data.get('director', 'Hype Williams')
+        
+        # Create a mock video response
+        return {
+            "status": "success",
+            "message": f"🎬 Video generated for director: {director}",
+            "scenes_processed": len(storyboard),
+            "video_url": "https://example.com/mock_video.mp4",
+            "duration": sum(s.get('duration', 5) for s in storyboard),
+            "director": director,
+            "mock": True,
+            "note": "This is a placeholder response. Real video generation will be added later."
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
 @app.get("/api/health")
 async def health():
     return {"status": "healthy"}
