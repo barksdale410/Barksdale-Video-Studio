@@ -226,3 +226,10 @@ MIT License - see [LICENSE](LICENSE) for details.
 ---
 
 Built with ❤️ by the Barksdale Video Studio Team
+---
+
+## 🚀 Live URLs
+
+- **Frontend (GitHub Pages):** https://barksdale410.github.io/Barksdale-Video-Studio/
+  - Note: URL is case-sensitive. Use exact casing: `Barksdale-Video-Studio`
+- **Backend API:** https://barksdale-video-studio-8x8e.onrender.com
