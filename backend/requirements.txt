@@ -18,7 +18,7 @@ passlib[bcrypt]==1.7.4
 bcrypt==4.1.2
 
 # External APIs
-requests==2.31.0
+requests==2.33.0
 pydantic[email]==2.5.3
 pydantic-settings==2.1.0
 
@@ -28,5 +28,5 @@ pydantic-settings==2.1.0
 # cloudinary==1.36.0
 
 # Utilities
-python-dotenv==1.0.0
+python-dotenv==1.2.2
 httpx==0.26.0
