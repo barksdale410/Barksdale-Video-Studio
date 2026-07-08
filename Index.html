@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BARKSDALE VIDEO STUDIO</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0b0d10; color: #e6edf3; font-family: system-ui, sans-serif; padding: 16px; max-width: 480px; margin: 0 auto; padding-bottom: 80px; }
+        h1 { font-size: 28px; font-weight: 800; }
+        h1 span { background: linear-gradient(135deg, #f0883e, #e65c1a); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .subtitle { color: #8b949e; font-size: 14px; border-left: 3px solid #f0883e; padding-left: 12px; margin-bottom: 16px; }
+        .card { background: #161b22; border: 1px solid #30363d; border-radius: 14px; padding: 16px; margin-bottom: 16px; }
+        label { display: block; font-size: 12px; color: #8b949e; margin: 12px 0 4px; text-transform: uppercase; }
+        select, textarea { width: 100%; padding: 12px; background: #0d1117; border: 1px solid #30363d; border-radius: 10px; color: #e6edf3; font-size: 15px; font-family: inherit; }
+        textarea { min-height: 150px; resize: vertical; }
+        button { width: 100%; padding: 14px; background: linear-gradient(135deg, #238636, #2ea043); border: none; border-radius: 10px; color: white; font-weight: 600; font-size: 16px; cursor: pointer; margin-top: 12px; }
+        button:active { transform: scale(0.97); }
+        .output { background: #0d1117; border-radius: 10px; padding: 12px; font-family: monospace; font-size: 12px; color: #8b949e; margin-top: 12px; border: 1px solid #21262d; max-height: 300px; overflow-y: auto; white-space: pre-wrap; }
+        .hidden { display: none; }
+        .loading { display: none; text-align: center; padding: 20px; }
+        .spinner { display: inline-block; width: 24px; height: 24px; border: 3px solid #21262d; border-top: 3px solid #f0883e; border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .scene-card { background: #0d1117; padding: 10px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #21262d; }
+        .scene-card strong { color: #58a6ff; }
+        .scene-card .duration { color: #8b949e; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <h1>🎬 <span>BARKSDALE</span> VIDEO STUDIO</h1>
+    <p class="subtitle">Script to Screen — AI-Powered Movie Production</p>
+
+    <div id="loading" class="loading"><div class="spinner"></div><p>Processing...</p></div>
+
+    <div class="card">
+        <label>🎥 Director</label>
+        <select id="director"></select>
+
+        <label>🎭 Genre</label>
+        <select id="genre"></select>
+
+        <label>🎨 Mood</label>
+        <select id="mood"></select>
+
+        <label>📝 Script</label>
+        <textarea id="script" placeholder="Paste your script here...">INT. DARK STUDIO - NIGHT
+
+A lone producer sits at a mixing console. Neon lights flicker.
+
+PRODUCER
+(whispering)
+The beat is almost ready.</textarea>
+
+        <button id="analyzeBtn">🎬 Analyze Script</button>
+    </div>
+
+    <div id="storyboard" class="card hidden">
+        <div style="display:flex;justify-content:space-between;color:#8b949e;font-size:13px;margin-bottom:8px;">
+            <span>📋 STORYBOARD</span>
+            <span id="sceneCount">0 scenes</span>
+        </div>
+        <div id="storyboardContent"></div>
+        <button id="generateVideoBtn" style="margin-top:12px;">🎬 Generate Movie</button>
+    </div>
+
+    <div id="output" class="output hidden"></div>
+
+    <script>
+        let API_BASE_URL = localStorage.getItem('VS_API') || '';
+        if (!API_BASE_URL && window.location.hostname === 'localhost') API_BASE_URL = 'http://localhost:8001';
+        console.log('API URL:', API_BASE_URL || '(not set)');
+
+        async function loadOptions() {
+            if (!API_BASE_URL) return alert('Set API: localStorage.setItem("VS_API", "https://your-backend.onrender.com")');
+            try {
+                const res = await fetch(API_BASE_URL + '/api/options');
+                const data = await res.json();
+                const dirSel = document.getElementById('director');
+                data.directors.forEach(d => { const opt = document.createElement('option'); opt.value = d; opt.textContent = d; dirSel.appendChild(opt); });
+                const genSel = document.getElementById('genre');
+                data.genres.forEach(g => { const opt = document.createElement('option'); opt.value = g; opt.textContent = g; genSel.appendChild(opt); });
+                const moodSel = document.getElementById('mood');
+                data.moods.forEach(m => { const opt = document.createElement('option'); opt.value = m; opt.textContent = m; moodSel.appendChild(opt); });
+            } catch (err) { console.error(err); }
+        }
+        loadOptions();
+
+        document.getElementById('analyzeBtn').addEventListener('click', async () => {
+            document.getElementById('loading').style.display = 'block';
+            try {
+                const res = await fetch(API_BASE_URL + '/api/script/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        script: document.getElementById('script').value,
+                        director: document.getElementById('director').value,
+                        genre: document.getElementById('genre').value,
+                        mood: document.getElementById('mood').value
+                    })
+                });
+                const data = await res.json();
+                const sb = document.getElementById('storyboard');
+                sb.classList.remove('hidden');
+                document.getElementById('sceneCount').textContent = data.scene_count + ' scenes';
+                document.getElementById('storyboardContent').innerHTML = data.scenes.map((s, i) =>
+                    `<div class="scene-card">
+                        <strong>Scene ${i+1}</strong>
+                        <span class="duration">${s.duration}s</span>
+                        <div style="font-size:13px;color:#c9d1d9;margin-top:4px;">${s.heading || 'No heading'}</div>
+                        <div style="font-size:12px;color:#8b949e;margin-top:4px;">${(s.action || '').substring(0, 100)}...</div>
+                    </div>`
+                ).join('');
+                window.storyboard = data.scenes;
+                document.getElementById('output').classList.add('hidden');
+            } catch (err) {
+                const output = document.getElementById('output');
+                output.classList.remove('hidden');
+                output.textContent = '❌ Error: ' + err.message;
+            } finally { document.getElementById('loading').style.display = 'none'; }
+        });
+
+        document.getElementById('generateVideoBtn').addEventListener('click', async () => {
+            if (!window.storyboard) return;
+            document.getElementById('loading').style.display = 'block';
+            try {
+                const res = await fetch(API_BASE_URL + '/api/video/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        storyboard: window.storyboard,
+                        director: document.getElementById('director').value
+                    })
+                });
+                const data = await res.json();
+                const output = document.getElementById('output');
+                output.classList.remove('hidden');
+                output.textContent = '🎬 Movie generated!\n\n' + JSON.stringify(data, null, 2);
+            } catch (err) {
+                document.getElementById('output').classList.remove('hidden');
+                document.getElementById('output').textContent = '❌ Error: ' + err.message;
+            } finally { document.getElementById('loading').style.display = 'none'; }
+        });
+
+        console.log('Set API: localStorage.setItem("VS_API", "https://your-backend.onrender.com")');
+    </script>
+</body>
+</html>
