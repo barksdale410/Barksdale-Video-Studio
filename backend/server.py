@@ -3,6 +3,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 import json
 import uvicorn
+import os
 
 app = FastAPI(title="Barksdale Video Studio API")
 
@@ -13,14 +14,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Load templates
-with open('templates/directors.json', 'r') as f:
+# Get the directory where this file is located
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Load templates from the parent directory
+with open(os.path.join(BASE_DIR, '..', 'templates', 'directors.json'), 'r') as f:
     DIRECTORS = json.load(f).get('directors', [])
 
-with open('templates/genres.json', 'r') as f:
+with open(os.path.join(BASE_DIR, '..', 'templates', 'genres.json'), 'r') as f:
     GENRES = json.load(f).get('genres', [])
 
-with open('templates/moods.json', 'r') as f:
+with open(os.path.join(BASE_DIR, '..', 'templates', 'moods.json'), 'r') as f:
     MOODS = json.load(f)
 
 @app.get("/")
@@ -37,8 +41,7 @@ async def options():
 
 @app.post("/api/script/analyze")
 async def analyze_script(request: Request):
-    data = await request.json()
-    # Return a simple storyboard for now
+    await request.json()
     return {
         "scenes": [
             {
