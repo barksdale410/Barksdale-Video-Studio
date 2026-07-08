@@ -1,8 +1,7 @@
 # backend/server.py
-import json
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+import json
 import uvicorn
 
 app = FastAPI(title="Barksdale Video Studio API")
@@ -14,6 +13,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Load templates
 with open('templates/directors.json', 'r') as f:
     DIRECTORS = json.load(f).get('directors', [])
 
@@ -22,12 +22,6 @@ with open('templates/genres.json', 'r') as f:
 
 with open('templates/moods.json', 'r') as f:
     MOODS = json.load(f)
-
-class ScriptRequest(BaseModel):
-    script: str
-    director: str
-    genre: str
-    mood: str
 
 @app.get("/")
 async def root():
@@ -42,10 +36,18 @@ async def options():
     }
 
 @app.post("/api/script/analyze")
-async def analyze_script(req: ScriptRequest):
+async def analyze_script(request: Request):
+    data = await request.json()
+    # Return a simple storyboard for now
     return {
         "scenes": [
-            {"scene_number": 1, "heading": "INT. STUDIO - NIGHT", "action": "A producer sits at a mixing console", "duration": 10, "emotional_tone": "Dark"}
+            {
+                "scene_number": 1,
+                "heading": "INT. STUDIO - NIGHT",
+                "action": "A producer sits at a mixing console",
+                "duration": 10,
+                "emotional_tone": "Dark"
+            }
         ],
         "total_duration": 10,
         "scene_count": 1
@@ -56,4 +58,4 @@ async def health():
     return {"status": "healthy"}
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8001)
+    uvicorn.run(app, host="0.0.0.0", port=10000)
