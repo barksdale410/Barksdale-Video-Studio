@@ -1,0 +1,14 @@
+{
+  "genres": [
+    {"name": "Action", "description": "Fast-paced, intense, physical stunts", "camera_style": "Dynamic, fast cuts, slow-motion", "moods": ["Intense", "Exciting", "Heroic"]},
+    {"name": "Drama", "description": "Emotional, character-driven, realistic", "camera_style": "Close-ups, natural light, intimate", "moods": ["Emotional", "Thoughtful", "Heartfelt"]},
+    {"name": "Sci-Fi", "description": "Futuristic, imaginative, speculative", "camera_style": "Wide shots, special effects, futuristic", "moods": ["Mind-bending", "Epic", "Suspenseful"]},
+    {"name": "Horror", "description": "Scary, suspenseful, dark", "camera_style": "Slow reveals, jump scares, dark lighting", "moods": ["Terrifying", "Dark", "Suspenseful"]},
+    {"name": "Comedy", "description": "Humorous, light-hearted, entertaining", "camera_style": "Bright, fast-paced, comedic framing", "moods": ["Funny", "Light", "Entertaining"]},
+    {"name": "Romance", "description": "Love story, emotional, intimate", "camera_style": "Close-ups, soft lighting, warm colours", "moods": ["Romantic", "Sweet", "Heartfelt"]},
+    {"name": "Thriller", "description": "Suspenseful, tense, psychological", "camera_style": "Tight framing, dark lighting, quick cuts", "moods": ["Suspenseful", "Tense", "Dark"]},
+    {"name": "Documentary", "description": "Real, informative, authentic", "camera_style": "Hand-held, natural lighting, interviews", "moods": ["Informative", "Real", "Authentic"]},
+    {"name": "Western", "description": "American frontier, desert, lawless", "camera_style": "Wide shots, warm colours, slow pans", "moods": ["Gritty", "Heroic", "Atmospheric"]},
+    {"name": "Anime", "description": "Japanese animation, stylised, emotional", "camera_style": "Dynamic angles, bright colours, expressive", "moods": ["Stylised", "Emotional", "Epic"]}
+  ]
+}
