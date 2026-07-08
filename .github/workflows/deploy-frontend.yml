@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'frontend/index.html'
+      - 'index.html'
 
 jobs:
   deploy:
@@ -27,7 +27,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './frontend'
+          path: '.'
 
       - name: Deploy to GitHub Pages
         id: deployment
