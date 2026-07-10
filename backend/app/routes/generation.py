@@ -9,6 +9,7 @@ from app.core.security import get_optional_user
 from app.core.config import settings
 from app.models.models import Director, Generation, User
 from app.schemas.schemas import VideoGenerationRequest, GenerationResponse, GenerationStatusResponse
+from backend.video_engine import VideoGenerator
 
 router = APIRouter(prefix="/api/v1", tags=["Video Generation"])
 
@@ -77,10 +78,12 @@ async def start_video_generation(
 
 
 def process_video_generation(job_id: str, db: Session):
-    """Process video generation job (simulated for demo)."""
+    """Process video generation job using NVIDIA Cosmos3-Nano via Hugging Face."""
     from app.core.database import SessionLocal
     
     db = SessionLocal()
+    video_generator = VideoGenerator()
+    
     try:
         generation = db.query(Generation).filter(Generation.job_id == job_id).first()
         if not generation:
@@ -95,37 +98,48 @@ def process_video_generation(job_id: str, db: Session):
         
         # Step 1: Parsing (20%)
         import time
-        time.sleep(1)
+        time.sleep(0.5)
         generation.progress = 20
         generation.current_step = "Theming"
         db.commit()
         
         # Step 2: Theming (40%)
-        time.sleep(1)
+        time.sleep(0.5)
         generation.progress = 40
         generation.current_step = "Styling"
         db.commit()
         
-        # Step 3: Styling (70%)
-        time.sleep(1)
-        generation.progress = 70
-        generation.current_step = "Generating"
+        # Step 3: Styling (60%)
+        time.sleep(0.5)
+        generation.progress = 60
+        generation.current_step = "Generating video"
         db.commit()
         
-        # Step 4: Generating (90%)
-        time.sleep(2)
+        # Step 4: Generate video using NVIDIA Cosmos3-Nano
+        script_content = generation.script_content
+        result = video_generator.generate_scene(
+            prompt=script_content[:500],  # Limit prompt length
+            duration=5  # 5 seconds per scene
+        )
+        
         generation.progress = 90
         generation.current_step = "Finalizing"
         db.commit()
         
-        # Complete
-        generation.status = "completed"
-        generation.progress = 100
-        generation.current_step = "Ready"
-        generation.completed_at = datetime.utcnow()
-        generation.video_url = f"https://example.com/videos/{job_id}.mp4"
-        generation.thumbnail_url = f"https://picsum.photos/seed/{job_id}/640/360"
-        generation.estimated_duration = 30  # seconds
+        # Step 5: Finalize
+        if result.get('success'):
+            generation.status = "completed"
+            generation.progress = 100
+            generation.current_step = "Ready"
+            generation.completed_at = datetime.utcnow()
+            generation.video_url = result.get('video_url', f"https://example.com/videos/{job_id}.mp4")
+            generation.thumbnail_url = f"https://picsum.photos/seed/{job_id}/640/360"
+            generation.estimated_duration = result.get('duration', 5)
+        else:
+            generation.status = "failed"
+            generation.error_message = result.get('error', 'Video generation failed')
+            generation.completed_at = datetime.utcnow()
+        
         db.commit()
         
     except Exception as e:

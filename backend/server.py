@@ -4,6 +4,8 @@ import json
 import uvicorn
 import os
 
+from video_engine import VideoGenerator
+
 app = FastAPI(title="Barksdale Video Studio API")
 
 app.add_middleware(
@@ -23,6 +25,9 @@ with open(os.path.join(BASE_DIR, '..', 'templates', 'genres.json'), 'r') as f:
 
 with open(os.path.join(BASE_DIR, '..', 'templates', 'moods.json'), 'r') as f:
     MOODS = json.load(f)
+
+# Initialize video generator
+video_generator = VideoGenerator()
 
 @app.get("/")
 async def root():
@@ -49,22 +54,38 @@ async def analyze_script(request: Request):
 
 @app.post("/api/video/generate")
 async def generate_video(request: Request):
+    """
+    Generate video using NVIDIA Cosmos3-Nano via Hugging Face Inference API.
+    """
     try:
         data = await request.json()
         storyboard = data.get('storyboard', [])
         director = data.get('director', 'Hype Williams')
+        prompt = data.get('prompt', ' '.join([s.get('action', '') for s in storyboard]))
         
-        # Create a mock video response
-        return {
-            "status": "success",
-            "message": f"🎬 Video generated for director: {director}",
-            "scenes_processed": len(storyboard),
-            "video_url": "https://example.com/mock_video.mp4",
-            "duration": sum(s.get('duration', 5) for s in storyboard),
-            "director": director,
-            "mock": True,
-            "note": "This is a placeholder response. Real video generation will be added later."
-        }
+        # Generate video using NVIDIA Cosmos3-Nano
+        result = video_generator.generate_scene(
+            prompt=prompt,
+            duration=data.get('duration', 5)
+        )
+        
+        if result.get('success'):
+            return {
+                "status": "success",
+                "message": f"🎬 Video generated for director: {director}",
+                "scenes_processed": len(storyboard),
+                "video_url": result.get('video_url', f"https://example.com/video_{int(os.time.time())}.mp4"),
+                "video_base64": result.get('video_base64'),
+                "duration": result.get('duration', 5),
+                "director": director,
+                "mock": result.get('mock', False),
+                "model": "nvidia/Cosmos3-Nano"
+            }
+        else:
+            return {
+                "status": "error",
+                "message": result.get('error', 'Video generation failed')
+            }
     except Exception as e:
         return {
             "status": "error",
